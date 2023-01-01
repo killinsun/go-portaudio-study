@@ -29,7 +29,7 @@ func NewWAVEncoder(filePath string, file *os.File, numSamples uint32) *WAVEncode
 func (en WAVEncoder) Encode(buf []int16) {
 	samples := make([]wav.Sample, en.numSamples)
 	for i := 0; i < len(buf); i++ {
-		samples[i].Values[0] = int(buf[i])
+		samples[i].Values[0] = int(buf[i]) // Encode as monaural
 	}
 
 	if err := en.writer.WriteSamples(samples); err != nil {

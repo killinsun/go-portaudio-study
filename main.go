@@ -20,6 +20,6 @@ func main() {
 		panic("Could not create a new directory")
 	}
 
-	pm := recorder.NewPCMRecorder(fmt.Sprintf(outDir+"/file"), 3)
-	pm.Start(sig)
+	pr := recorder.NewPCMRecorder(fmt.Sprintf(outDir+"/file"), 5)
+	pr.Start(sig)
 }

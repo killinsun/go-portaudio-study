@@ -19,38 +19,38 @@ type PCMRecorder struct {
 }
 
 func NewPCMRecorder(filePath string, interval int) *PCMRecorder {
-	var pm = &PCMRecorder{
+	var pr = &PCMRecorder{
 		FilePath: filePath,
 		Interval: interval,
 	}
-	return pm
+	return pr
 }
 
-func (pm PCMRecorder) Start(sig chan os.Signal) error {
+func (pr PCMRecorder) Start(sig chan os.Signal) error {
 	portaudio.Initialize()
 	defer portaudio.Terminate()
 
-	pm.Input = make([]int16, 64)
-	stream, err := portaudio.OpenDefaultStream(1, 0, 44100, len(pm.Input), pm.Input)
+	pr.Input = make([]int16, 64)
+	stream, err := portaudio.OpenDefaultStream(1, 0, 44100, len(pr.Input), pr.Input)
 	if err != nil {
 		log.Fatalf("Could not open default stream \n %v", err)
 	}
-	pm.stream = stream
-	pm.stream.Start()
-	defer pm.stream.Close()
+	pr.stream = stream
+	pr.stream.Start()
+	defer pr.stream.Close()
 
-	startTime := pm.stream.Time()
+	startTime := pr.stream.Time()
 
 loop:
 	for {
-		elapseTime := (pm.stream.Time() - startTime).Round(time.Second)
+		elapseTime := (pr.stream.Time() - startTime).Round(time.Second)
 
-		if err := pm.stream.Read(); err != nil {
+		if err := pr.stream.Read(); err != nil {
 			fmt.Println(err)
 			log.Fatalf("Could not read stream\n%v", err)
 		}
 
-		pm.Data = append(pm.Data, pm.Input...)
+		pr.Data = append(pr.Data, changeVolume(pr.Input, 10)...)
 
 		select {
 		case <-sig:
@@ -59,31 +59,40 @@ loop:
 		}
 
 		// Create a new file to record audio per PCMRecorder.Interval seconds.
-		if int(elapseTime.Seconds())%pm.Interval == 0 {
-			outputFileName := fmt.Sprintf(pm.FilePath+"_%d.wav", int(elapseTime.Seconds()))
+		if int(elapseTime.Seconds())%pr.Interval == 0 {
+			outputFileName := fmt.Sprintf(pr.FilePath+"_%d.wav", int(elapseTime.Seconds()))
 			if !exists(outputFileName) {
-				pm.file, err = os.Create(outputFileName)
+				pr.file, err = os.Create(outputFileName)
 				if err != nil {
 					log.Fatalf("Could not create a new file to write \n %v", err)
 				}
 				defer func() {
-					if err := pm.file.Close(); err != nil {
+					if err := pr.file.Close(); err != nil {
 						log.Fatalf("Could not close output file \n %v", err)
 					}
 				}()
 
 				fmt.Println("A new .wav file was created", outputFileName, elapseTime)
-				wav := NewWAVEncoder(pm.FilePath, pm.file, uint32(len(pm.Data)))
-				wav.Encode(pm.Data)
-				fmt.Printf("file is written successfully. length: %d\n", len(pm.Data))
-				pm.Data = nil
+				wav := NewWAVEncoder(pr.FilePath, pr.file, uint32(len(pr.Data)))
+				wav.Encode(pr.Data)
+				fmt.Printf("file is written successfully. length: %d\n", len(pr.Data))
+				pr.Data = nil
 				fmt.Println("tmp buffer initialized.")
 			}
 		}
-
 	}
 
 	return nil
+}
+
+func changeVolume(input []int16, vol float32) (output []int16) {
+	output = make([]int16, len(input))
+
+	for i := 0; i < len(output); i++ {
+		output[i] = int16(float32(input[i]) * vol)
+	}
+
+	return output
 }
 
 func exists(fileName string) bool {
