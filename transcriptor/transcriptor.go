@@ -32,9 +32,14 @@ func (ts *TranscriptionService) SendAudioContent(ctx context.Context, filePath s
 
 	resp, err := ts.client.Recognize(ctx, &speechpb.RecognizeRequest{
 		Config: &speechpb.RecognitionConfig{
-			Encoding:        speechpb.RecognitionConfig_LINEAR16,
-			SampleRateHertz: 44100,
-			LanguageCode:    "ja-JP",
+			Encoding:                   speechpb.RecognitionConfig_LINEAR16,
+			SampleRateHertz:            44100,
+			LanguageCode:               "ja-JP",
+			AlternativeLanguageCodes:   []string{"en-US"},
+			EnableAutomaticPunctuation: true,
+			DiarizationConfig: &speechpb.SpeakerDiarizationConfig{
+				EnableSpeakerDiarization: true,
+			},
 		},
 		Audio: &speechpb.RecognitionAudio{
 			AudioSource: &speechpb.RecognitionAudio_Content{
@@ -47,10 +52,9 @@ func (ts *TranscriptionService) SendAudioContent(ctx context.Context, filePath s
 	}
 
 	fmt.Println("-----------------")
-	fmt.Println(resp.Results)
 	for _, result := range resp.Results {
 		for _, alt := range result.Alternatives {
-			fmt.Printf("\"%v\" (confidence=%3f)\n", alt.Transcript, alt.Confidence)
+			fmt.Printf("「%v」\n", alt.Transcript)
 		}
 	}
 }

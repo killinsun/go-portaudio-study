@@ -28,7 +28,7 @@ func main() {
 	}
 
 	wait.Add(1)
-	pr := recorder.NewPCMRecorder(fmt.Sprintf(outDir+"/file"), 5)
+	pr := recorder.NewPCMRecorder(fmt.Sprintf(outDir+"/file"), 10)
 	go pr.Start(sig, filePathCh, wait)
 
 	for {
