@@ -66,7 +66,7 @@ loop:
 
 		if pr.detectSpeechStopped() || pr.detectSpeechExceededLimitation() {
 			outputFileName := fmt.Sprintf(pr.FilePath+"_%d.wav", int(pr.recognitionStartTime))
-			pr.WritePCMData(outputFileName, pr.Data)
+			pr.writePCMData(outputFileName, pr.Data)
 			filepathCh <- outputFileName
 
 			pr.Data = nil
@@ -106,7 +106,7 @@ func (pr *PCMRecorder) detectSpeechExceededLimitation() bool {
 	return len(pr.Data) >= (44100 * pr.Interval)
 }
 
-func (pr *PCMRecorder) WritePCMData(outputFileName string, pcmData []int16) {
+func (pr *PCMRecorder) writePCMData(outputFileName string, pcmData []int16) {
 	if exists(outputFileName) {
 		log.Fatalf("The audio file is already exists.")
 	}
