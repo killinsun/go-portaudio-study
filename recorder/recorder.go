@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/gordonklaus/portaudio"
@@ -26,7 +27,7 @@ func NewPCMRecorder(filePath string, interval int) *PCMRecorder {
 	return pr
 }
 
-func (pr PCMRecorder) Start(sig chan os.Signal) error {
+func (pr PCMRecorder) Start(sig chan os.Signal, filepathCh chan string, wait *sync.WaitGroup) error {
 	portaudio.Initialize()
 	defer portaudio.Terminate()
 
@@ -54,6 +55,8 @@ loop:
 
 		select {
 		case <-sig:
+			wait.Done()
+			close(filepathCh)
 			break loop
 		default:
 		}
@@ -76,6 +79,9 @@ loop:
 				wav := NewWAVEncoder(pr.FilePath, pr.file, uint32(len(pr.Data)))
 				wav.Encode(pr.Data)
 				fmt.Printf("file is written successfully. length: %d\n", len(pr.Data))
+
+				filepathCh <- outputFileName
+
 				pr.Data = nil
 				fmt.Println("tmp buffer initialized.")
 			}
