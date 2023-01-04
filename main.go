@@ -22,13 +22,13 @@ func main() {
 
 	filePathCh := make(chan string)
 
-	outDir := time.Now().Format("audio_20060102_T150405")
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	baseDir := time.Now().Format("audio_20060102_T150405")
+	if err := os.MkdirAll(baseDir, 0755); err != nil {
 		panic("Could not create a new directory")
 	}
 
 	wait.Add(1)
-	pr := recorder.NewPCMRecorder(fmt.Sprintf(outDir+"/file"), 10)
+	pr := recorder.NewPCMRecorder(fmt.Sprintf(baseDir+"/file"), 30)
 	go pr.Start(sig, filePathCh, wait)
 
 	for {

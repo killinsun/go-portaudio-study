@@ -11,19 +11,17 @@ import (
 )
 
 type PCMRecorder struct {
-	file                 *os.File
-	FilePath             string
+	BaseDir              string
 	Interval             int
-	Input                []int16
 	Data                 []int16
 	stream               *portaudio.Stream
 	silentCount          int
 	recognitionStartTime time.Duration
 }
 
-func NewPCMRecorder(filePath string, interval int) *PCMRecorder {
+func NewPCMRecorder(baseDir string, interval int) *PCMRecorder {
 	var pr = &PCMRecorder{
-		FilePath:             filePath,
+		BaseDir:              baseDir,
 		Interval:             interval,
 		silentCount:          0,
 		recognitionStartTime: -1,
@@ -35,9 +33,9 @@ func (pr *PCMRecorder) Start(sig chan os.Signal, filepathCh chan string, wait *s
 	portaudio.Initialize()
 	defer portaudio.Terminate()
 
-	pr.Input = make([]int16, 64)
+	input := make([]int16, 64)
 	var err error
-	pr.stream, err = portaudio.OpenDefaultStream(1, 0, 44100, len(pr.Input), pr.Input)
+	pr.stream, err = portaudio.OpenDefaultStream(1, 0, 44100, len(input), input)
 	if err != nil {
 		log.Fatalf("Could not open default stream \n %v", err)
 	}
@@ -58,14 +56,14 @@ loop:
 			log.Fatalf("Could not read stream\n%v", err)
 		}
 
-		if !pr.detectSilence() {
-			pr.record()
+		if !pr.detectSilence(input) {
+			pr.record(input)
 		} else {
 			pr.silentCount++
 		}
 
 		if pr.detectSpeechStopped() || pr.detectSpeechExceededLimitation() {
-			outputFileName := fmt.Sprintf(pr.FilePath+"_%d.wav", int(pr.recognitionStartTime))
+			outputFileName := fmt.Sprintf(pr.BaseDir+"_%d.wav", int(pr.recognitionStartTime))
 			pr.writePCMData(outputFileName, pr.Data)
 			filepathCh <- outputFileName
 
@@ -78,17 +76,17 @@ loop:
 	return nil
 }
 
-func (pr *PCMRecorder) record() {
+func (pr *PCMRecorder) record(input []int16) {
 	pr.silentCount = 0
 	if pr.recognitionStartTime == -1 {
 		pr.recognitionStartTime = pr.stream.Time()
 	}
-	pr.Data = append(pr.Data, changeVolume(pr.Input, 10)...)
+	pr.Data = append(pr.Data, changeVolume(input, 10)...)
 }
 
-func (pr *PCMRecorder) detectSilence() bool {
+func (pr *PCMRecorder) detectSilence(input []int16) bool {
 	silent := true
-	for _, bit := range pr.Input {
+	for _, bit := range input {
 		// TODO: We should support threshold
 		if bit != 0 {
 			silent = false
