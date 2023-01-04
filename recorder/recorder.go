@@ -19,7 +19,6 @@ type PCMRecorder struct {
 	stream               *portaudio.Stream
 	silentCount          int
 	recognitionStartTime time.Duration
-	recording            bool
 }
 
 func NewPCMRecorder(filePath string, interval int) *PCMRecorder {
@@ -88,7 +87,6 @@ loop:
 
 			pr.Data = nil
 			pr.silentCount = 0
-			pr.recording = false
 			pr.recognitionStartTime = -1
 		}
 	}
@@ -97,7 +95,6 @@ loop:
 }
 
 func (pr *PCMRecorder) record() {
-	pr.recording = true
 	pr.silentCount = 0
 	if pr.recognitionStartTime == -1 {
 		pr.recognitionStartTime = pr.stream.Time()
