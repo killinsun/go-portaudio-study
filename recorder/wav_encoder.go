@@ -22,7 +22,7 @@ func NewWAVEncoder(filePath string, file *os.File, numSamples uint32) *WAVEncode
 		numSamples: numSamples,
 	}
 
-	en.writer = wav.NewWriter(en.OutFile, en.numSamples, 2, 44100, 16)
+	en.writer = wav.NewWriter(en.OutFile, en.numSamples, 1, 44100, 16)
 	return en
 }
 
