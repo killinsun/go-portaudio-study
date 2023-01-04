@@ -64,25 +64,9 @@ loop:
 			pr.silentCount++
 		}
 
-		// Create a new file to record audio per PCMRecorder.Interval seconds.
 		if pr.detectSpeechStopped() || pr.detectSpeechExceededLimitation() {
 			outputFileName := fmt.Sprintf(pr.FilePath+"_%d.wav", int(pr.recognitionStartTime))
-			if exists(outputFileName) {
-				log.Fatalf("The audio file is already exists.")
-			}
-			pr.file, err = os.Create(outputFileName)
-			if err != nil {
-				log.Fatalf("Could not create a new file to write \n %v", err)
-			}
-			defer func() {
-				if err := pr.file.Close(); err != nil {
-					log.Fatalf("Could not close output file \n %v", err)
-				}
-			}()
-
-			wav := NewWAVEncoder(pr.FilePath, pr.file, uint32(len(pr.Data)))
-			wav.Encode(pr.Data)
-
+			pr.WritePCMData(outputFileName, pr.Data)
 			filepathCh <- outputFileName
 
 			pr.Data = nil
@@ -120,6 +104,24 @@ func (pr *PCMRecorder) detectSpeechStopped() bool {
 
 func (pr *PCMRecorder) detectSpeechExceededLimitation() bool {
 	return len(pr.Data) >= (44100 * pr.Interval)
+}
+
+func (pr *PCMRecorder) WritePCMData(outputFileName string, pcmData []int16) {
+	if exists(outputFileName) {
+		log.Fatalf("The audio file is already exists.")
+	}
+	file, err := os.Create(outputFileName)
+	if err != nil {
+		log.Fatalf("Could not create a new file to write \n %v", err)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Fatalf("Could not close output file \n %v", err)
+		}
+	}()
+
+	wav := NewWAVEncoder(file, pcmData)
+	wav.Encode()
 }
 
 func exists(fileName string) bool {
